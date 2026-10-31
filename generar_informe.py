@@ -27,9 +27,22 @@ MATERIA = "Programación paralela y concurrente"
 FECHA = "6 de noviembre del 2026"
 # ------------------------------------------------------------------------------- #
 
-RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-R = lambda *p: os.path.join(RAIZ, *p)
-SALIDA = R("informe", "Practica5_Asincronia_Informe.pdf")
+_aqui = os.path.dirname(os.path.abspath(__file__))
+# Funciona con las carpetas (informe/, resultados/, figs/) y también con todos los archivos sueltos en la raíz.
+RAIZ = os.path.dirname(_aqui) if os.path.basename(_aqui) == "informe" else _aqui
+
+
+def R(*p):
+    anidado = os.path.join(RAIZ, *p)
+    plano = os.path.join(RAIZ, p[-1])
+    if os.path.exists(anidado):
+        return anidado
+    return plano if os.path.exists(plano) else anidado
+
+
+_NOMBRE_PDF = "Practica5_Asincronia_Informe.pdf"
+SALIDA = (os.path.join(RAIZ, "informe", _NOMBRE_PDF) if os.path.isdir(os.path.join(RAIZ, "informe"))
+          else os.path.join(RAIZ, _NOMBRE_PDF))
 
 NAVY, BLUE = colors.HexColor("#1f3a5f"), colors.HexColor("#2f6fed")
 ROW, ORANGE, PEACH = colors.HexColor("#e8edfb"), colors.HexColor("#e8a33d"), colors.HexColor("#fde8c8")
