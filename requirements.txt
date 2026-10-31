@@ -1,0 +1,5 @@
+matplotlib>=3.6
+pandas>=1.5
+reportlab>=4.0
+pygments>=2.10
+pillow>=9.0

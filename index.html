@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simultaneidad y Asincronía · laboratorio interactivo</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1d2330;--mut:#667085;--bd:#dfe3ea;--ac:#2563eb;--sec:#d95f02;--asy:#1b9e77;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#10141c;--card:#181e2a;--tx:#e6e9ef;--mut:#98a2b3;--bd:#2a3344;--ac:#6ea0ff;--sec:#f08a3c;--asy:#3fcf9f;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+header{padding:18px 22px 6px;max-width:1280px;margin:auto}h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--mut)}
+nav{max-width:1280px;margin:0 auto;padding:6px 22px;display:flex;flex-wrap:wrap;gap:8px;font-size:14px}nav a{color:var(--ac)}
+main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:16px;padding:14px 22px 30px;max-width:1280px;margin:auto}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.card h2{margin:0 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+button{font:inherit;padding:7px 11px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}button:disabled{opacity:.5;cursor:default}button:hover:not(:disabled){filter:brightness(.95)}
+label{font-size:13px;display:inline-flex;gap:5px;align-items:center}
+.lane{margin:10px 0 4px;font-weight:600}.lane small{font-weight:400;color:var(--mut)}
+.f{display:grid;grid-template-columns:110px 1fr 56px;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+.bar{height:16px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0}.s .bar i{background:var(--sec)}.a .bar i{background:var(--asy)}
+.f span:last-child{text-align:right;color:var(--mut);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.stat{background:var(--bg);border-radius:8px;padding:7px 9px}.stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--mut)}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{border:1px solid var(--bd);padding:5px 6px;text-align:center}
+input[type=range]{width:110px}
+pre{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px;overflow:auto;font-size:12.5px;margin:6px 0 0}
+.note{font-size:13px;color:var(--mut);margin:6px 0 0}
+</style>
+</head>
+<body>
+<header><h1>Simultaneidad y Asincronía: laboratorio interactivo</h1>
+<p>Cuatro descargas simuladas con duración aleatoria. Compara el enfoque <b>secuencial</b> (una tras otra) con el <b>asincrónico</b> (todas a la vez, como <code>asyncio.gather()</code>). Ajusta las duraciones o sortea otras nuevas.</p></header>
+<nav>
+<a href="informe/Practica5_Asincronia_Informe.pdf">📄 Informe (PDF)</a> ·
+<a href="descargas.py">🐍 descargas.py</a> ·
+<a href="experimento.py">🐍 experimento.py</a> ·
+<a href="resultados/repeticiones.csv">Resultados (CSV)</a> ·
+<a href="figs/linea_de_tiempo.png">Gráficas</a> ·
+<a href="README.md">Cómo ejecutarlo</a>
+</nav>
+<main>
+<section class="card">
+  <div class="row">
+    <button class="p" id="run">▶ Ejecutar ambos</button>
+    <button id="rnd">🎲 Duraciones aleatorias</button>
+    <button id="rst">Reiniciar</button>
+    <label>Velocidad <input id="spd" type="range" min="1" max="10" value="5"> <b id="spdv">×5</b></label>
+  </div>
+  <div class="lane">1) Secuencial (bloqueante) <small>· <code>time.sleep()</code>, una descarga espera a la anterior</small></div>
+  <div class="s" id="ls"></div>
+  <div class="lane">2) Asincrónico (no bloqueante) <small>· <code>await asyncio.gather(...)</code>, todas avanzan juntas</small></div>
+  <div class="a" id="la"></div>
+  <div class="stats">
+    <div class="stat"><b id="tS">–</b><span>total secuencial</span></div>
+    <div class="stat"><b id="tA">–</b><span>total asincrónico</span></div>
+    <div class="stat"><b id="acc">–</b><span>aceleración</span></div>
+    <div class="stat"><b id="est">listo</b><span>estado</span></div>
+  </div>
+  <p class="note">Tiempos en segundos simulados (la velocidad solo acelera la animación). Esperado: secuencial ≈ suma de duraciones; asincrónico ≈ mayor duración.</p>
+</section>
+<section style="display:grid;gap:16px;align-content:start">
+  <div class="card"><h2>Duraciones (s)</h2><div id="dur"></div></div>
+  <div class="card"><h2>Tabla comparativa (tus ejecuciones)</h2>
+    <table><thead><tr><th>#</th><th>Suma</th><th>Mayor</th><th>Secuencial</th><th>Asincrónico</th></tr></thead><tbody id="hist"><tr><td colspan="5">Aún sin ejecuciones</td></tr></tbody></table></div>
+  <div class="card"><h2>El corazón del código</h2>
+<pre>async def descargar(nombre, dur):
+    await asyncio.sleep(dur)   # cede el control
+
+async def main():
+    await asyncio.gather(
+        *(descargar(n, d) for n, d in archivos))
+
+asyncio.run(main())</pre></div>
+</section>
+</main>
+<footer style="max-width:1280px;margin:0 auto;padding:0 22px 30px;color:var(--mut);font-size:13px">Práctica 5 · Programación Paralela y Concurrente · CUCEI. Esta página reproduce en el navegador la lógica de <code>descargas.py</code>; las mediciones reales con Python están en <code>resultados/</code>.</footer>
+<script>
+const N=["video.mp4","documento.pdf","imagen.png","datos.csv"];
+let D=[2.4,3.7,1.3,2.9], running=false, hist=[], tok=0;
+const $=id=>document.getElementById(id), sp=()=>+$("spd").value*2;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function build(){
+  ["ls","la"].forEach(id=>{$(id).innerHTML=N.map((n,i)=>`<div class="f"><span>${n}</span><div class="bar"><i id="${id}${i}"></i></div><span id="${id}t${i}">0.00 s</span></div>`).join("")});
+  $("dur").innerHTML=N.map((n,i)=>`<div class="row" style="margin:3px 0"><span style="width:105px;font-size:13px">${n}</span><input type="range" min="0.5" max="6" step="0.1" value="${D[i]}" data-i="${i}"><b style="width:46px">${D[i].toFixed(1)}</b></div>`).join("");
+  document.querySelectorAll("#dur input").forEach(e=>e.oninput=()=>{D[+e.dataset.i]=+e.value;e.nextElementSibling.textContent=(+e.value).toFixed(1);});
+}
+function clearUI(){["ls","la"].forEach(id=>N.forEach((_,i)=>{$(id+i).style.width="0";$(id+"t"+i).textContent="0.00 s"}));$("tS").textContent=$("tA").textContent=$("acc").textContent="–"}
+// Anima una descarga: avanza con el reloj real escalado por la velocidad.
+async function dl(id,i,my){const t0=performance.now();
+  while(true){if(my!==tok)return 0;const e=(performance.now()-t0)/1000*sp(),p=Math.min(e/D[i],1);
+    $(id+i).style.width=p*100+"%";$(id+"t"+i).textContent=Math.min(e,D[i]).toFixed(2)+" s";
+    if(p>=1)return D[i];await sleep(30);}}
+async function run(){if(running)return;running=true;tok++;const my=tok;clearUI();$("run").disabled=true;
+  $("est").textContent="secuencial…";let t=0;
+  for(let i=0;i<N.length;i++){const r=await dl("ls",i,my);if(my!==tok)return;t+=r}
+  $("tS").textContent=t.toFixed(2)+" s";
+  $("est").textContent="asincrónico…";
+  const rs=await Promise.all(N.map((_,i)=>dl("la",i,my)));if(my!==tok)return;
+  const a=Math.max(...rs);$("tA").textContent=a.toFixed(2)+" s";$("acc").textContent=(t/a).toFixed(2)+"×";$("est").textContent="terminado";
+  hist.push([D.reduce((x,y)=>x+y,0),Math.max(...D),t,a]);
+  $("hist").innerHTML=hist.map((h,k)=>`<tr><td>${k+1}</td><td>${h[0].toFixed(2)}</td><td>${h[1].toFixed(2)}</td><td>${h[2].toFixed(2)}</td><td>${h[3].toFixed(2)}</td></tr>`).join("");
+  $("run").disabled=false;running=false;}
+$("run").onclick=run;
+$("rnd").onclick=()=>{D=N.map(()=>Math.round((1+Math.random()*3)*10)/10);build();if(!running)clearUI()};
+$("rst").onclick=()=>{tok++;running=false;$("run").disabled=false;hist=[];$("hist").innerHTML='<tr><td colspan="5">Aún sin ejecuciones</td></tr>';clearUI();$("est").textContent="listo"};
+$("spd").oninput=()=>{$("spdv").textContent="×"+sp()};
+$("spdv").textContent="×"+sp();
+build();
+</script>
+</body>
+</html>
