@@ -1,0 +1,31 @@
+Duraciones simuladas: {'video.mp4': 2.67, 'documento.pdf': 2.94, 'imagen.png': 2.43, 'datos.csv': 1.52}
+Suma de duraciones: 9.56 s | Mayor duración: 2.94 s
+
+=== BLOQUE 1: ejecución SECUENCIAL (bloqueante) ===
+[  0.00 s] Iniciando  video.mp4 (durará 2.67 s)
+[  2.67 s] Terminó     video.mp4
+[  2.67 s] Iniciando  documento.pdf (durará 2.94 s)
+[  5.61 s] Terminó     documento.pdf
+[  5.61 s] Iniciando  imagen.png (durará 2.43 s)
+[  8.04 s] Terminó     imagen.png
+[  8.04 s] Iniciando  datos.csv (durará 1.52 s)
+[  9.56 s] Terminó     datos.csv
+--> Tiempo total secuencial: 9.56 s
+
+=== BLOQUE 2: ejecución ASINCRÓNICA (asyncio.gather) ===
+[  0.00 s] Iniciando  video.mp4 (durará 2.67 s)
+[  0.00 s] Iniciando  documento.pdf (durará 2.94 s)
+[  0.00 s] Iniciando  imagen.png (durará 2.43 s)
+[  0.00 s] Iniciando  datos.csv (durará 1.52 s)
+[  1.52 s] Terminó     datos.csv
+[  2.43 s] Terminó     imagen.png
+[  2.67 s] Terminó     video.mp4
+[  2.94 s] Terminó     documento.pdf
+--> Tiempo total asincrónico: 2.94 s
+
+=== TABLA COMPARATIVA ===
+Enfoque                 Tiempo total (s)
+Secuencial                          9.56
+Asincrónico                         2.94
+Aceleración                        3.25x
+Tiempo ahorrado                   6.62 s

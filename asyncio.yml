@@ -1,0 +1,28 @@
+name: Ejecutar práctica asyncio
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  correr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Bloque secuencial vs asincrónico
+        run: python descargas.py --semilla 2025 | tee resultados/salida_descargas.txt
+      - name: Experimento completo (tablas y gráficas)
+        run: python experimento.py
+      - name: Informe PDF
+        run: python informe/generar_informe.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resultados-asyncio
+          path: |
+            resultados/
+            figs/
+            informe/*.pdf
